@@ -1,0 +1,33 @@
+div(class="jumbotron")
+    h3(class="header") All Spots
+    div(class="divider")
+    div(class="grid")
+    each spot in spots
+            div(class="grid-item")
+                a(href=spot.link)
+                    img(src=spot.link)
+                p=spot.name
+                p(class='likes tracker')=spot.likes.length 
+                button(type='button' class='badges btn btn-link' id='likes')   
+                    span(class="glyphicon glyphicon-heart" aria-hidden="true")
+                p(class='spotters tracker')=spot.spotters.length
+                button(type='button' class='badges btn btn-link' id='spotters' disabled="disabled")   
+                    span(class="glyphicon glyphicon-eye-open" aria-hidden="true")
+script.
+    $('document').ready(function() {
+        var $grid = $('.grid').masonry({
+            itemSelector: '.grid-item',
+            columnWidth: 200,
+        });
+        $grid.imagesLoaded().progress( function() {
+        $grid.masonry('layout');
+        });
+        $('.grid').on('click', '#likes', function() {
+            var thispic = $(this).siblings('a').attr('href');
+            socket.emit('addlike', thispic);
+        });
+        socket.on('addlike', function(hearts, thispic) {
+            var number = $("a[href='"+thispic+"']").siblings('.likes').text();
+            $("a[href='"+thispic+"']").siblings('.likes').text(parseInt(number)+parseInt(hearts));
+        });
+    });

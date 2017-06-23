@@ -1,0 +1,24 @@
+include head.pug
+    body
+        nav(class="navbar navbar-default")
+            div(class="container-fluid")
+                div(class="navbar-header")
+                    button(type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false")
+                        span (class="sr-only") Toggle navigation
+                        span(class="icon-bar")
+                        span(class="icon-bar")
+                        span(class="icon-bar")
+                    ul(class="nav navbar-nav navbar-left")
+                        li(class="navbar-brand") #SpotOn  
+                        li 
+                            a(href="/mySpots") My Spots
+                        li 
+                            a(href="/allSpots") All Spots
+                div(class="collapse navbar-collapse")  
+                    ul(class="nav navbar-nav navbar-right")
+                        li
+                            p Welcome #{locals.user}! 
+                        li
+                            a(href="#")  
+                                i(class="fa fa-twitter fa-lg" aria-hidden="true")
+                                p(id="signin")  Log Out

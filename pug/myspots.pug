@@ -1,0 +1,88 @@
+include auth.pug
+div(class="jumbotron")
+    h3(class="header") My Spots
+    div(class="divider")
+    div(class="grid")
+        div(class="grid-item")
+           p That was
+           button(class="btn btn-default addspot_open" type="submit" id="addSpot") Spot On!
+        each picture in pictures
+            div(class="grid-item")
+                a(href=picture.link)
+                    img(src=picture.link)
+                p=picture.name
+                button(type='button' class='close') x
+                p(class='likes tracker')=picture.likes.length 
+                button(type='button' class='badges btn btn-link' id='likes')   
+                    span(class="glyphicon glyphicon-heart" aria-hidden="true")
+                p(class='spotters tracker')=picture.spotters.length
+                button(type='button' class='badges btn btn-link' id='spotters' disabled="disabled")   
+                    span(class="glyphicon glyphicon-eye-open" aria-hidden="true")
+    div(id="addspot")
+        h4 Spotted something? 
+        div(class="divider")
+        div(class="imagebox")
+        form(id="spotted")
+            div(class="form-group")
+                label(for="title") Title
+                input(type="title" for="title" placeholder="Name your spot" class="form-control" id="title")
+            div(class="form-group")
+                label(for="source") Source (URL)
+                input(type="url" for="source" placeholder="http://www.example.com/spot.jpg" class="form-control" id="url")
+            button(type="submit" class="btn btn-success") Spotted!     
+            button(type="button" class="btn btn-default addspot_close") Cancel 
+script. 
+    $('document').ready(function() {
+        var url, title;
+        var $grid = $('.grid').masonry({
+            itemSelector: '.grid-item',
+            columnWidth: 200,
+        });
+        $grid.imagesLoaded().progress( function() {
+        $grid.masonry('layout');
+        });
+        $("#addspot").popup({
+            color: 'white',
+        });
+        $("#url").keyup(function() {
+            url = $(this).val();
+            $(".imagebox").css('background-image', 'url('+url+')');
+        });
+        $("#title").keyup(function() {
+            title = $(this).val();
+        });
+        $("#spotted").submit(function(e) {
+            e.preventDefault();
+            socket.emit('spotted', title, url);
+            var spot = $("<div class='grid-item'><a href='"+url+"' target='_blank'><img src='"+url+"'></a><p>"+title+"</p><button type='button' class='close'>x</button><p class='likes tracker'>0</p><button type='button' class='badges btn btn-link' id='likes'><span class='glyphicon glyphicon-heart' aria-hidden='true'></span></button><p class='spotters tracker'>0</p><button type='button' class='badges btn btn-link' id='spotters' disabled='disabled'><span class='glyphicon glyphicon-eye-open' aria-hidden='true'></span></button></div>");
+            $grid.append(spot);
+            $grid.masonry('appended', spot);
+            $("#addspot").popup('hide');
+            $("#title").val('');
+            $("#url").val('');
+            $(".imagebox").css('background-image', '');
+            return false;
+        });
+        $(".addspot_close").click(function() {
+            $("#title").val('');
+            $("#url").val('');
+            $(".imagebox").css('background-image', '');
+        });
+        $('.grid').on('click', '.close', function() {
+            var remove = $(this).siblings('a').attr('href');
+            console.log(remove);
+            socket.emit('removePic', remove);
+            $(this).parent().remove();
+        });
+        $('.grid').on('click', '#likes', function() {
+            var thispic = $(this).siblings('a').attr('href');
+            socket.emit('addlike', thispic);
+        });
+        socket.on('addlike', function(hearts, thispic) {
+            var number = $("a[href='"+thispic+"']").siblings('.likes').text();
+            $("a[href='"+thispic+"']").siblings('.likes').text(parseInt(number)+parseInt(hearts));
+        });
+        $('img').error(function(){
+            $(this).attr('src', '../public/img/broken-image.png');
+            });
+    });    
