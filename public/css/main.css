@@ -59,6 +59,7 @@ i {
 	border-radius: 5px;
 	max-width: 20% !important;
 	text-align: center;
+	height: auto;
 }
 
 .divider {
@@ -75,16 +76,17 @@ i {
 	height: 50% !important;
 }
 
-#addspot {
+#addspot, #spotOn {
 	height: 90% !important;
 	background-color: white;
 	width: 40% !important;
 }
 
-#addspot h4, form, .imagebox {
+.popup {
 	margin: 3% !important;
 	border-radius: 2px !important;
 }
+
 
 #newspot {
 	margin-right: 2% !important;
@@ -135,4 +137,10 @@ img {
 li p {
 	padding: 15px !important;
 	color: #777 !important; 
+}
+
+.owner {
+	float: left !important;
+	line-height: 1.5 !important;
+	font-size: 16px !important;
 }

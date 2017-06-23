@@ -9,30 +9,41 @@ module.exports = function (io, app, passport) {
 	
 app.use(bodyParser.urlencoded({ extended: true }));	
 
-var header, spotter, hearts;
-var spots = [];
+
+var header, spotter, hearts, status;
+var userspots = [];
 var allspots = [];
 
 	function isLoggedIn (req) {
 		if (req.isAuthenticated()) {
 			spotter=req.user.twitter.username;
 			header = pug.renderFile(path.join(__dirname, '../../pug/auth.pug'), {user: spotter});
+			status='loggedin';
 		} else {
 			header = pug.renderFile(path.join(__dirname, '../../pug/unauth.pug'));
+			status='notloggedin';
 		}
 	}
 	
-	function mySpots (callback) {
-		Spot.find({owner: spotter}, function (err, spots)  {
+	function userSpots (name, callback) {
+		Spot.find({owner: name}, function (err, spots)  {
 			if (err) return console.log(err);
-			console.log(spots);
+			spots.forEach(function(spot) {
+				userspots.push(spot);
+			});
 			callback();
 		});
-			callback();
 	}
 	
 	function allSpots(callback) {
-		
+		Spot.find({}).sort('-date').exec(function(err, spots){
+			if (err) return console.log(err);
+			spots.forEach(function(spot) {
+				allspots.push(spot);
+			});
+			console.log(allspots);
+			callback();
+	});
 	}
 
 
@@ -54,21 +65,32 @@ var allspots = [];
 		
 	app.route('/mySpots')
 		.get(function(req,res) {
-			mySpots(function() {
-			var mine = pug.renderFile(path.join(__dirname, '../../pug/myspots.pug'), {pictures: spots});
+			userSpots(spotter, function() {
+			var mine = pug.renderFile(path.join(__dirname, '../../pug/myspots.pug'), {user: spotter, pictures: userspots});
 			res.send(mine);
-			spots = [];
+			userspots = [];
 			});
 		});
 	
 	app.route('/allSpots')
 		.get(function(req,res) {
 			isLoggedIn(req);
-			allSpots(function() {
-			var all = pug.renderFile(path.join(__dirname, '../../pug/allspots.pug'), {spots: allspots});
-			res.send(header+all);
+			allSpots(function (){
+				var all = pug.renderFile(path.join(__dirname, '../../pug/allspots.pug'), {spots: allspots, header: "All"});
+			res.send(header+all);	
 			});
+			allspots=[];
 		});	
+		
+	app.route('/:name')
+		.get(function(req,res) {
+			var name = req.path.substr(1);
+			userSpots(name, function() {
+			var somespots = pug.renderFile(path.join(__dirname, '../../pug/allspots.pug'), {spots: userspots, header: name+"'s"});
+			res.send(header+somespots);
+			userspots = [];
+			});
+		});
 		
 	io.on('connection', function(socket){
 			console.log('a user connected');
@@ -80,40 +102,51 @@ var allspots = [];
 				newSpot.spotters = [];
 				newSpot.owner = spotter; 
 				newSpot.save();
-				allspots.push(newSpot);
 			});
 		socket.on('removePic', function(remove) {
-			User.findOne({username: spotter}, function(err, user) {
+			Spot.remove({link: remove, owner: spotter}, function (err) {
 				if (err) return console.log(err);
-				for (var i = 0; i<user.spots.length; i++) {
-					if (user.spots[i].link===remove) {
-						user.spots.splice(i,1);
-						user.markModified('spots');
-						user.save();
-					}
-				}
 			});
 		});
 		socket.on('addlike', function(thispic) {
-			User.findOne({ 'spots.link': thispic }, function(err, user) {
+			Spot.findOne({ link: thispic }, function(err, spot) {
 				if (err) return console.log(err);
-				for (var i=0; i<user.spots.length; i++) {
-					if (user.spots[i].link === thispic) {
-						var index = user.spots[i].likes.indexOf(spotter);
-							if (user.spots[i].likes.indexOf(spotter)!==-1) {
-								user.spots[i].likes.splice(index, 1);
+						var index = spot.likes.indexOf(spotter);
+							if (spot.likes.indexOf(spotter)!==-1) {
+								spot.likes.splice(index, 1);
 								hearts = -1;
 							}
-							else if (user.spots[i].likes.indexOf(spotter)===-1) {
-								user.spots[i].likes.push(spotter);
+							else if (spot.likes.indexOf(spotter)===-1) {
+								spot.likes.push(spotter);
 								hearts = 1;
 						} 
-						user.markModified('spots');
-						user.save();
+						spot.markModified('likes');
+						spot.save();
 						socket.emit('addlike', hearts, thispic);
-					}
-				}
 			});
+		});
+		socket.on('savespot', function(title, thispic) {
+			if(status ==='loggedin') {	
+				
+				Spot.find({link: thispic}, function(err, spots) {
+					if (err) return console.log(err);
+					spots.forEach(function(spot) {
+						spot.spotters.push(spotter);
+					});
+				});
+				var newSpot = new Spot();
+				newSpot.link = thispic;
+				newSpot.name = title;
+				newSpot.likes = [];
+				newSpot.spotters = [];
+				newSpot.owner = spotter; 
+				newSpot.save();
+				var length = newSpot.spotters.length;
+				socket.emit('savespot', length, thispic);
+			}
+			else {
+				socket.emit('notloggedin');	
+			}
 		});
 	});
 	

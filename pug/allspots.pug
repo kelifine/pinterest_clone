@@ -1,26 +1,45 @@
 div(class="jumbotron")
-    h3(class="header") All Spots
+    h3(class="header")=locals.header+" Spots"
     div(class="divider")
     div(class="grid")
-    each spot in spots
-            div(class="grid-item")
-                a(href=spot.link)
-                    img(src=spot.link)
-                p=spot.name
-                p(class='likes tracker')=spot.likes.length 
-                button(type='button' class='badges btn btn-link' id='likes')   
-                    span(class="glyphicon glyphicon-heart" aria-hidden="true")
-                p(class='spotters tracker')=spot.spotters.length
-                button(type='button' class='badges btn btn-link' id='spotters' disabled="disabled")   
-                    span(class="glyphicon glyphicon-eye-open" aria-hidden="true")
+        each spot in spots
+                div(class="grid-item")
+                    a(href=spot.link target="_blank")
+                        img(src=spot.link)
+                    p=spot.name
+                    a(href="/"+spot.owner)
+                        p(class="owner")=spot.owner 
+                    p(class='likes tracker')=spot.likes.length 
+                    button(type='button' class='badges btn btn-link' id='likes')   
+                        span(class="glyphicon glyphicon-heart" aria-hidden="true")
+                    p(class='spotters tracker')=spot.spotters.length
+                    button(type='button' class='badges btn btn-link spotOn_open' id='spotters')   
+                        span(class="glyphicon glyphicon-eye-open" aria-hidden="true")
+    div(id="spotOn")
+        h4(class="popup") This is #SpotOn! 
+        div(class="divider")
+        div(class="imagebox popup")
+        form(id="spotted" class="popup")
+            div(class="form-group")
+                label(for="title") Title
+                input(type="title" for="title" placeholder="Name your spot" class="form-control" id="title")
+            div(class="form-group")
+                label(for="source") Source (URL)
+                input(type="url" for="source" placeholder="http://www.example.com/spot.jpg" class="form-control" id="url")
+            button(type="submit" class="btn btn-success" id="save") Save    
+            button(type="button" class="btn btn-default spotOn_close") Cancel                 
 script.
     $('document').ready(function() {
+        var title;
         var $grid = $('.grid').masonry({
             itemSelector: '.grid-item',
             columnWidth: 200,
         });
         $grid.imagesLoaded().progress( function() {
         $grid.masonry('layout');
+        });
+        $("#spotOn").popup({
+            color: 'white',
         });
         $('.grid').on('click', '#likes', function() {
             var thispic = $(this).siblings('a').attr('href');
@@ -29,5 +48,33 @@ script.
         socket.on('addlike', function(hearts, thispic) {
             var number = $("a[href='"+thispic+"']").siblings('.likes').text();
             $("a[href='"+thispic+"']").siblings('.likes').text(parseInt(number)+parseInt(hearts));
+        });
+        $("#title").keyup(function() {
+            title = $(this).val();
+            console.log(title);
+        });
+        $("#spotters").click(function() {
+            var thispic = $(this).siblings('a').attr('href');
+            console.log(thispic);
+            $('#url').val(thispic);
+            $(".imagebox").css('background-image', 'url('+thispic+')');
+        });
+        $(".spotOn_close").click(function() {
+            $("#title").val('');
+            $("#url").val('');
+            $(".imagebox").css('background-image', '');
+        });
+        $("#save").click(function() {
+            socket.emit('savespot', title, thispic);
+        });
+        socket.on('savespot', function(length, thispic){
+            var number = $("a[href='"+thispic+"']").siblings('.spotters').text();
+            $("a[href='"+thispic+"']").siblings('.spotters').text(parseInt(number)+parseInt(length));
+        });
+        socket.on('notloggedin', function() {
+            alert("You must be logged in to save spots.");
+        });
+        $('img').on('error', function() {
+            $(this).attr('src', '../public/img/broken-image.png');
         });
     });

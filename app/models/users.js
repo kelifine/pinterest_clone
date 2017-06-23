@@ -9,8 +9,7 @@ var User = new Schema({
 		displayName: String,
 		username: String,
 		photos: Array
-	},
-	spots: Array
+	}
 });
 
 module.exports = mongoose.model('User', User);

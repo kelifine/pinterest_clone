@@ -8,7 +8,7 @@ div(class="jumbotron")
            button(class="btn btn-default addspot_open" type="submit" id="addSpot") Spot On!
         each picture in pictures
             div(class="grid-item")
-                a(href=picture.link)
+                a(href=picture.link target="_blank")
                     img(src=picture.link)
                 p=picture.name
                 button(type='button' class='close') x
@@ -19,10 +19,10 @@ div(class="jumbotron")
                 button(type='button' class='badges btn btn-link' id='spotters' disabled="disabled")   
                     span(class="glyphicon glyphicon-eye-open" aria-hidden="true")
     div(id="addspot")
-        h4 Spotted something? 
+        h4(class=popup) Spotted something? 
         div(class="divider")
-        div(class="imagebox")
-        form(id="spotted")
+        div(class="imagebox popup")
+        form(id="spotted" class="popup")
             div(class="form-group")
                 label(for="title") Title
                 input(type="title" for="title" placeholder="Name your spot" class="form-control" id="title")
@@ -70,9 +70,9 @@ script.
         });
         $('.grid').on('click', '.close', function() {
             var remove = $(this).siblings('a').attr('href');
-            console.log(remove);
             socket.emit('removePic', remove);
             $(this).parent().remove();
+            $grid.masonry('layout');
         });
         $('.grid').on('click', '#likes', function() {
             var thispic = $(this).siblings('a').attr('href');
