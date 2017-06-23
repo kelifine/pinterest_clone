@@ -7,12 +7,11 @@ var routes = require('./app/routes/index.js');
 var session = require('express-session');
 
 var app = express();
-require('dotenv').load();
 require('./app/config/passport')(passport);
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-mongoose.connect(process.env.MONGO_URI);
+mongoose.connect(process.env.MONGOLAB_URL);
 mongoose.Promise = global.Promise;
 
 app.use('/public', express.static(process.cwd() + '/public'));
